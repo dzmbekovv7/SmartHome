@@ -7,27 +7,27 @@ import joblib
 import os
 
 price_per_m2 = {
-    'Бишкек': 129_290,
-    'Ош': 95_138,
-    'Чуйская область': 107_953,
-    'Иссык-Кульская область': 38_063,
-    'Баткенская область': 18_237,
-    'Таласская область': 44_302,
-    'Джалал-Абадская область': 46_798
+    'Bishkek': 129_290,
+    'Osh': 95_138,
+    'Chuy Region': 107_953,
+    'Issyk-Kul Region': 38_063,
+    'Batken Region': 18_237,
+    'Talas Region': 44_302,
+    'Jalal-Abad Region': 46_798
 }
 
 property_type_multipliers = {
-    'Квартира': 1.0,
-    'Дом': 1.15,
-    'Коттедж': 1.3,
-    'Вилла': 1.5
+    'Apartment': 1.0,
+    'House': 1.15,
+    'Cottage': 1.3,
+    'Villa': 1.5
 }
 
 data = []
 
 for region, price_m2 in price_per_m2.items():
     for property_type, type_multiplier in property_type_multipliers.items():
-        for area in range(30, 301, 10):  # от 30 до 300 м²
+        for area in range(30, 301, 10):  # from 30 to 300 m²
             bedrooms = max(1, area // 40)
             bathrooms = max(1, area // 70)
             floors = 1 if area <= 100 else 2 if area <= 200 else 3
@@ -73,7 +73,7 @@ model = Pipeline(steps=[
 
 model.fit(X, y)
 
-# Сохраняем модель
+# Save the model
 os.makedirs("realestate/ml_model/models", exist_ok=True)
 joblib.dump(model, "realestate/ml_model/models/price_model.pkl")
-print("✅ Модель обучена с учетом типа недвижимости и сохранена.")
+print("✅ Model trained with property type taken into account and saved.")

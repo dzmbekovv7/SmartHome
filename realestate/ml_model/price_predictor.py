@@ -7,7 +7,6 @@ model_path = os.path.join(os.path.dirname(__file__), 'models', 'price_model.pkl'
 model = joblib.load(model_path)
 
 def predict_price(area, bedrooms, bathrooms, floors, has_pool, property_type, region):
-    # Преобразуем в int (1 или 0), если передали как True/False
     has_pool = int(has_pool)
 
     # Формируем DataFrame с нужными колонками

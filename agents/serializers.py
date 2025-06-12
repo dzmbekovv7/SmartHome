@@ -20,6 +20,8 @@ class AgentApplicationSerializer(serializers.ModelSerializer):
     class Meta:
         model = AgentApplication
         fields = [
+            'id',
+            'created_at',
             'full_name',
             'phone',
             'passport_number',
@@ -29,9 +31,3 @@ class AgentApplicationSerializer(serializers.ModelSerializer):
             'additional_info',
         ]
 
-class AgentApplicationSerializer(serializers.ModelSerializer):
-    username = serializers.CharField(source='user.username', read_only=True)
-
-    class Meta:
-        model = AgentApplication
-        fields = '__all__'  # включит все поля модели

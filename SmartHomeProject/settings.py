@@ -60,14 +60,6 @@ MIDDLEWARE = [
 ]
 from datetime import timedelta
 
-SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(days=7),  # токен будет жить 7 дней
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
-    "ROTATE_REFRESH_TOKENS": False,
-    "BLACKLIST_AFTER_ROTATION": True,
-    "AUTH_HEADER_TYPES": ("Bearer",),
-    "AUTH_TOKEN_CLASSES": ("rest_framework_simplejwt.tokens.AccessToken",),
-}
 ROOT_URLCONF = 'SmartHomeProject.urls'
 
 TEMPLATES = [
@@ -97,7 +89,7 @@ CACHES = {
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'smarthome',         # Your PostgreSQL database name
+        'NAME': 'smart',         # Your PostgreSQL database name
         'USER': 'postgres',   # Your PostgreSQL username
         'PASSWORD': 'Aziret7bklass',    # Your PostgreSQL password
         'HOST': 'localhost',            # Or use your DB host
@@ -155,6 +147,15 @@ USE_I18N = True
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",  # Vite dev server
 ]
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(days=7),  # токен будет жить 7 дней
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+    "ROTATE_REFRESH_TOKENS": False,
+    "BLACKLIST_AFTER_ROTATION": True,
+    "AUTH_HEADER_TYPES": ("Bearer",),
+    "AUTH_TOKEN_CLASSES": ("rest_framework_simplejwt.tokens.AccessToken",),
+}
 
 CORS_ALLOW_CREDENTIALS = True
 

@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import House, Comment
-
+from apiauth.models import User
 from .models import Currency
 
 class CurrencySerializer(serializers.ModelSerializer):
@@ -22,15 +22,21 @@ class HouseSerializer(serializers.ModelSerializer):
             'latitude', 'longitude',
             'rooms', 'square', 'price', 'has_pool',
             'features_internal', 'features_external',
-            'views', 'likes', 'comments'
+            'views', 'likes', 'comments', 'location'
         ]
 
     def get_likes(self, obj):
         return [user.id for user in obj.liked_by.all()]
 
+# serializers.py
+
+class UserCommentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'avatar']
 
 class CommentSerializer(serializers.ModelSerializer):
-    user = serializers.StringRelatedField(read_only=True)
+    user = UserCommentSerializer(read_only=True)
 
     class Meta:
         model = Comment

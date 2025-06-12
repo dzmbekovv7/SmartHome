@@ -11,6 +11,8 @@ urlpatterns = [
     path('chats/<int:chat_id>/messages/', views.get_chat_messages),
     path('chats/<int:chat_id>/send/', views.send_message),
     path('chats/<int:chat_id>/rename/', views.rename_chat),
+    path('chats/<int:chat_id>/delete/', views.delete_chat, name='delete_chat'),
+
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

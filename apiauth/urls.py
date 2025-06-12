@@ -16,6 +16,5 @@ urlpatterns = [
     path('graphs/all/', views.AllGraphsAPIView.as_view(), name='all-graphs'),
     path('consultation/', views.consultation_request, name='consultation_request'),
 path("admin-stats/", views.AdminStatsAPIView.as_view(), name="admin-stats"),
-    path('admin-dashboard/', views.all_graphs_api, name='market-trends-api'),
 
 ]

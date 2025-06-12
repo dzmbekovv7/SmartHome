@@ -34,7 +34,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from django.db.models import Count
 import io
-
+from houses.models import Comment
 def generate_confirmation_code():
     return ''.join(random.choices('0123456789', k=6))
 def send_confirmation_email(user, confirmation_code):
@@ -195,6 +195,7 @@ def send_password_reset_email(user, reset_code):
 
     send_mail(subject, message, from_email, recipient_list, html_message=html_message)
 from rest_framework.permissions import BasePermission
+from rest_framework_simplejwt.token_blacklist.models import BlacklistedToken, OutstandingToken
 
 
 @csrf_exempt
@@ -301,92 +302,7 @@ class AllGraphsAPIView(APIView):
                 {"title": "Топ 10 локаций по количеству домов", "image": img4},
             ]
         })
-def generate_scatter_square_price(houses):
-    fig = plt.figure(figsize=(10, 6))
-    sns.scatterplot(x=[h.square for h in houses], y=[h.price for h in houses], alpha=0.6)
-    plt.title("Площадь дома vs Цена")
-    plt.xlabel("Площадь (м²)")
-    plt.ylabel("Цена")
-    plt.grid(True)
-    buf = io.BytesIO()
-    fig.savefig(buf, format='png')
-    plt.close(fig)
-    buf.seek(0)
-    return base64.b64encode(buf.getvalue()).decode()
 
-def generate_histogram_rooms(houses):
-    rooms = [h.rooms for h in houses]
-    fig = plt.figure(figsize=(8,5))
-    sns.histplot(rooms, bins=range(min(rooms), max(rooms)+2), discrete=True)
-    plt.title("Распределение количества комнат")
-    plt.xlabel("Количество комнат")
-    plt.ylabel("Частота")
-    plt.grid(axis='y')
-    buf = io.BytesIO()
-    fig.savefig(buf, format='png')
-    plt.close(fig)
-    buf.seek(0)
-    return base64.b64encode(buf.getvalue()).decode()
-
-def generate_pie_pool(houses):
-    total = houses.count()
-    with_pool = houses.filter(has_pool=True).count()
-    without_pool = total - with_pool
-    fig = plt.figure(figsize=(7,7))
-    plt.pie([with_pool, without_pool], labels=['С бассейном', 'Без бассейна'], autopct='%1.1f%%',
-            startangle=140, colors=['#66b3ff', '#ff9999'])
-    plt.title("Дома с бассейном и без")
-    plt.tight_layout()
-    buf = io.BytesIO()
-    fig.savefig(buf, format='png')
-    plt.close(fig)
-    buf.seek(0)
-    return base64.b64encode(buf.getvalue()).decode()
-
-def generate_bar_location(houses):
-    data = houses.values('location').annotate(count=Count('id')).order_by('-count')[:10]
-    locations = [d['location'] for d in data]
-    counts = [d['count'] for d in data]
-    fig = plt.figure(figsize=(12,6))
-    sns.barplot(x=counts, y=locations, palette='viridis')
-    plt.title("Топ 10 локаций по количеству домов")
-    plt.xlabel("Количество домов")
-    plt.ylabel("Локация")
-    plt.tight_layout()
-    buf = io.BytesIO()
-    fig.savefig(buf, format='png')
-    plt.close(fig)
-    buf.seek(0)
-    return base64.b64encode(buf.getvalue()).decode()
-
-@api_view(['GET'])
-def all_graphs_api(request):
-    end_date_str = request.GET.get('end_date')
-    start_date_str = request.GET.get('start_date')
-
-    if end_date_str:
-        end_date = parse_date(end_date_str)
-    else:
-        end_date = timezone.now().date()
-
-    if start_date_str:
-        start_date = parse_date(start_date_str)
-    else:
-        start_date = end_date - timedelta(days=30)
-
-    houses = House.objects.filter(date__range=(start_date, end_date))
-
-    if not houses.exists():
-        return Response({'error': 'No data found for given dates'}, status=400)
-
-    return Response({
-        "charts": [
-            {"title": "Площадь дома vs Цена", "image": generate_scatter_square_price(houses)},
-            {"title": "Распределение количества комнат", "image": generate_histogram_rooms(houses)},
-            {"title": "Дома с бассейном и без", "image": generate_pie_pool(houses)},
-            {"title": "Топ 10 локаций по количеству домов", "image": generate_bar_location(houses)},
-        ]
-    })
 
 class IsAdminOrAgent(BasePermission):
     def has_permission(self, request, view):
@@ -415,45 +331,60 @@ class IsAdmin(BasePermission):
     def has_permission(self, request, view):
         user = request.user
         return bool(user and user.is_authenticated and user.is_superuser)
-
+def block_user_tokens(user):
+    tokens = OutstandingToken.objects.filter(user=user)
+    for token in tokens:
+        try:
+            BlacklistedToken.objects.get_or_create(token=token)
+        except Exception:
+            pass
 class BlockUserView(APIView):
-    permission_classes = [IsAuthenticated, IsAdmin]
+    permission_classes = [IsAdmin]
 
     def post(self, request, user_id):
         try:
             user_to_block = User.objects.get(id=user_id)
-            if user_to_block.is_superuser:
-                return Response({"error": "Нельзя блокировать администратора."}, status=status.HTTP_400_BAD_REQUEST)
-
+            block_user_tokens(user_to_block)
             user_to_block.is_blocked = True
             user_to_block.save()
-            return Response({"message": f"Пользователь {user_to_block.username} заблокирован."}, status=status.HTTP_200_OK)
+            return Response({'detail': 'User blocked and tokens blacklisted.'}, status=status.HTTP_200_OK)
         except User.DoesNotExist:
-            return Response({"error": "Пользователь не найден."}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'detail': 'User not found.'}, status=status.HTTP_404_NOT_FOUND)
 
 def custom_exception_handler(exc, context):
     response = exception_handler(exc, context)
+
+    user = context['request'].user if context.get('request') else None
+    if user and user.is_authenticated and user.is_blocked:
+        return Response({"detail": "Ваш аккаунт был заблокирован."}, status=status.HTTP_403_FORBIDDEN)
 
     if isinstance(exc, (InvalidToken, TokenError)):
         return Response({"detail": "Токен истёк или недействителен. Войдите заново."}, status=status.HTTP_401_UNAUTHORIZED)
 
     return response
+
 class CheckAuthView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         user = request.user
-        if not user or not user.is_authenticated:
-            return Response({"detail": "Authentication credentials were not provided."}, status=status.HTTP_401_UNAUTHORIZED)
+
+        if getattr(user, 'is_blocked', False):
+            return Response(
+                {"detail": "Ваш аккаунт был заблокирован."},
+                status=status.HTTP_403_FORBIDDEN
+            )
 
         try:
             return Response({
                 "id": user.id,
                 "username": user.username,
                 "email": user.email,
-                "avatar": user.avatar.url if user.avatar else None,
+                "avatar": user.avatar.url if getattr(user, 'avatar', None) else None,
                 "is_superuser": user.is_superuser,
                 "created_at": user.created_at,
+                "is_agent": getattr(user, 'is_agent', False),
+                "is_blocked": user.is_blocked,
             }, status=status.HTTP_200_OK)
 
         except Exception as e:
@@ -489,8 +420,6 @@ class LoginView(APIView):
         try:
             user = User.objects.get(username=username)
 
-            if user.is_blocked:
-                return Response({"error": "Ваш аккаунт заблокирован."}, status=status.HTTP_403_FORBIDDEN)
 
             if check_password(password, user.password):
                 refresh = RefreshToken.for_user(user)

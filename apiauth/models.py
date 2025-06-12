@@ -4,10 +4,6 @@ from django.contrib.auth.models import Group, Permission
 import random
 import string
 from django.contrib.auth.models import AbstractUser
-from django.contrib.auth.models import BaseUserManager  # Add this import
-from django.utils import timezone
-from django.db.models import Sum, Avg, F, Q
-
 
 class UserManager(models.Manager):
     def get_by_natural_key(self, email):
@@ -39,7 +35,7 @@ class User(models.Model):
     email_confirmed = models.BooleanField(default=False)
     confirmation_code = models.CharField(max_length=6, blank=True, null=True)
     is_online = models.BooleanField(default=False)
-    avatar = models.ImageField(blank=True, null=True)
+    avatar = models.ImageField(upload_to='avatars/', blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True, blank=True, null=True)
 
     is_actively_looking = models.BooleanField(default=False)

@@ -17,24 +17,24 @@ def generate_chart(chart_type="price") -> str | None:
 
     if chart_type == "price":
         data = df["price"]
-        title = "Цены на дома"
-        ylabel = "Цена (USD)"
+        title = "House Prices"
+        ylabel = "Price (USD)"
         filename = "price_chart.png"
     elif chart_type == "sales":
         data = df["sales"]
-        title = "Продажи домов"
-        ylabel = "Продажи"
+        title = "House Sales"
+        ylabel = "Sales"
         filename = "sales_chart.png"
     elif chart_type == "size":
         data = df["size"]
-        title = "Площадь домов"
-        ylabel = "м²"
+        title = "House Size"
+        ylabel = "m²"
         filename = "size_chart.png"
     elif chart_type == "district":
-        # Пример заглушки, надо добавить логику по районам
-        data = df["price"]  # например, цены по районам — замените по своему датасету
-        title = "График по районам (пример)"
-        ylabel = "Цена (USD)"
+        # Example placeholder, logic by district needs to be added
+        data = df["price"]  # for example, prices by districts — replace according to your dataset
+        title = "Chart by Districts (example)"
+        ylabel = "Price (USD)"
         filename = "district_chart.png"
     else:
         return None
@@ -42,7 +42,7 @@ def generate_chart(chart_type="price") -> str | None:
     plt.figure(figsize=(6, 4))
     plt.plot(years, data, marker='o')
     plt.title(title)
-    plt.xlabel("Год")
+    plt.xlabel("Year")
     plt.ylabel(ylabel)
     plt.grid(True)
 

@@ -9,7 +9,7 @@ from rest_framework import serializers
 class RegisterSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['username', 'email', 'password', 'avatar', 'is_superuser', 'created_at'   ]  # Include 'phone' field
+        fields = ['username', 'email', 'password', 'avatar', 'is_superuser', 'created_at', 'is_agent'   ]  # Include 'phone' field
         extra_kwargs = {'password': {'write_only': True}}
 
     def create(self, validated_data):

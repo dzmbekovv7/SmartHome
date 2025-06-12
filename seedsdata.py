@@ -1,39 +1,29 @@
 import os
 import django
+from datetime import timedelta, date
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'SmartHomeProject.settings')
 django.setup()
+import random
 
 import datetime
 from realestate.models import Sale
 
-def run():
-    # Очистим данные для чистоты
-    Sale.objects.all().delete()
+# Удаляем старые данные
+Sale.objects.all().delete()
 
-    regions = [
-        'Бишкек',
-        'Ош',
-        'Чуй',
-        'Жалал-Абад',
-        'Нарын',
-        'Ысык-Куль',
-        'Талас',
-        'Баткен',
-        'Иссык-Куль'
-    ]
+regions = ['Бишкек', 'Ош', 'Токмок', 'Каракол', 'Нарын', 'Талас']
+base_date = date.today() - timedelta(days=60)
 
-    base_date = datetime.date.today()
-    sales = []
-    for day_offset in range(30):
-        date = base_date - datetime.timedelta(days=day_offset)
-        for region in regions:
-            price = 10000 + day_offset * 50 + hash(region) % 5000
-            sale = Sale(date=date, price=price, region=region)
-            sales.append(sale)
+print("Создание данных продаж...")
 
-    Sale.objects.bulk_create(sales)
-    print(f"Seeded {len(sales)} sales for Кыргызстан.")
+for i in range(60):
+    current_date = base_date + timedelta(days=i)
+    for _ in range(random.randint(3, 8)):  # продажи в день
+        Sale.objects.create(
+            date=current_date,
+            price=random.uniform(20000, 150000),
+            region=random.choice(regions)
+        )
 
-if __name__ == '__main__':
-    run()
+print("✅ Данные успешно добавлены.")

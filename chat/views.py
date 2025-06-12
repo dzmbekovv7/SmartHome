@@ -9,6 +9,8 @@ from django.contrib.auth.decorators import login_required
 from .models import Chat, ChatMessage
 from .logic import process_user_message  # Твой бот
 import json
+from rest_framework import status
+
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def create_chat(request):
@@ -41,7 +43,14 @@ def send_message(request, chat_id):
             is_user=True
         )
 
-        bot_reply, image_url = process_user_message(text)
+        result = process_user_message(text)
+
+        # Проверка, сколько значений вернулось
+        if isinstance(result, tuple) and len(result) == 2:
+            bot_reply, image_url = result
+        else:
+            bot_reply = result
+            image_url = None
 
         ChatMessage.objects.create(
             chat_id=chat_id,
@@ -57,7 +66,16 @@ def send_message(request, chat_id):
             "bot_reply": bot_reply,
             "image_url": image_url
         })
+@api_view(["DELETE"])
+@permission_classes([IsAuthenticated])
+def delete_chat(request, chat_id):
+    try:
+        chat = Chat.objects.get(id=chat_id, user=request.user)
+    except Chat.DoesNotExist:
+        return Response({"detail": "Чат не найден или доступ запрещён"}, status=status.HTTP_404_NOT_FOUND)
 
+    chat.delete()
+    return Response({"status": "ok", "message": "Чат успешно удалён"}, status=status.HTTP_200_OK)
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def rename_chat(request, chat_id):

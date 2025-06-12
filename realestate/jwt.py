@@ -8,7 +8,7 @@ class JWTAuthentication(authentication.BaseAuthentication):
         auth_header = request.headers.get('Authorization')
 
         if not auth_header:
-            return None  # no auth provided
+            return None  # no Authorization header
 
         try:
             prefix, token = auth_header.split(' ')
@@ -16,7 +16,18 @@ class JWTAuthentication(authentication.BaseAuthentication):
                 return None
 
             payload = jwt.decode(token, settings.JWT_SECRET, algorithms=['HS256'])
-            user = User.objects.get(pk=payload['userId'])  # assuming 'userId' in token
+            user = User.objects.get(pk=payload['userId'])  # assuming token has 'userId'
+
+            if user.is_blocked:
+                raise exceptions.AuthenticationFailed('Ваш аккаунт был заблокирован.')
+
             return (user, token)
-        except (jwt.ExpiredSignatureError, jwt.DecodeError, User.DoesNotExist):
-            raise exceptions.AuthenticationFailed('Invalid token')
+
+        except jwt.ExpiredSignatureError:
+            raise exceptions.AuthenticationFailed('Срок действия токена истёк.')
+
+        except jwt.DecodeError:
+            raise exceptions.AuthenticationFailed('Неверный токен.')
+
+        except User.DoesNotExist:
+            raise exceptions.AuthenticationFailed('Пользователь не найден.')

@@ -122,28 +122,48 @@ def market_trends_api(request):
         'popularityRegion': popularity_region,
     })
 
+
+from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+import logging
+
+logger = logging.getLogger(__name__)
+
 class PredictPriceView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
         user = request.user
-        print(user)
+        print(f"User making prediction: {user}")
         data = request.data
+
         try:
             area = float(data.get('sqft', 0))
             bedrooms = int(data.get('bedrooms', 0))
             bathrooms = int(data.get('bathrooms', 0))
             floors = int(data.get('floors', 0))
             has_pool = bool(data.get('has_pool', False))
-            property_type = data.get('property_type', 'Квартира')
-            region = data.get('region', 'Бишкек')
+            property_type = data.get('property_type', 'Apartment')  # translated default
+            region = data.get('region', 'Bishkek')  # translated default
 
+            # Validate inputs: no zero values allowed for numeric features
             if any(val == 0 for val in [area, bedrooms, bathrooms, floors]):
                 return Response({'error': 'Invalid input, some fields are zero or missing.'}, status=400)
+            ALLOWED_PROPERTY_TYPES = ['Apartment', 'House', 'Cottage', 'Villa']
+            ALLOWED_REGIONS = ['Bishkek', 'Osh', 'Chuy Region', 'Issyk-Kul Region', 'Batken Region', 'Talas Region',
+                               'Jalal-Abad Region']
+
+            if property_type not in ALLOWED_PROPERTY_TYPES:
+                return Response({'error': f"Invalid property type: {property_type}"}, status=400)
+
+            if region not in ALLOWED_REGIONS:
+                return Response({'error': f"Invalid region: {region}"}, status=400)
 
             price = price_predictor.predict_price(area, bedrooms, bathrooms, floors, has_pool, property_type, region)
-            price_usd = price / 89
+            price_usd = price / 89  # convert from local currency to USD
 
+            # Save the prediction history
             PredictionHistory.objects.create(
                 user=user,
                 prediction_type='price',
@@ -160,7 +180,7 @@ class PredictPriceView(APIView):
             return Response({'price': price_usd}, status=200)
 
         except Exception as e:
-            logger.error("PredictPriceView error: %s", str(e))
+            logger.error(f"PredictPriceView error: {str(e)}")
             return Response({'error': str(e)}, status=400)
 
 
