@@ -85,15 +85,19 @@ CACHES = {
         'LOCATION': 'unique-chatbot-cache',
     }
 }
+import os
+from dotenv import load_dotenv
 
+# Путь к .env, если он в корне проекта
+load_dotenv()
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'smart',         # Your PostgreSQL database name
-        'USER': 'postgres',   # Your PostgreSQL username
-        'PASSWORD': 'Aziret7bklass',    # Your PostgreSQL password
-        'HOST': 'localhost',            # Or use your DB host
-        'PORT': '5432',                 # Default PostgreSQL port
+        'NAME': os.getenv('DB_NAME'),         # из .env
+        'USER': os.getenv('DB_USER'),
+        'PASSWORD': os.getenv('DB_PASSWORD'),
+        'HOST': os.getenv('DB_HOST'),
+        'PORT': os.getenv('DB_PORT'),
     }
 }
 REST_FRAMEWORK = {
@@ -165,7 +169,10 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 import os
 STATIC_URL = '/static/'
-STATICFILES_DIRS = [os.path.join(BASE_DIR, 'realestate/static')]
+STATICFILES_DIRS = [
+    BASE_DIR / "media"
+]
+
 AUTH_USER_MODEL = 'apiauth.User'
 
 MEDIA_URL = '/media/'
@@ -184,15 +191,11 @@ import os
 
 # Email backend settings
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = os.getenv('EMAIL_HOST')
+EMAIL_PORT = int(os.getenv('EMAIL_PORT', 587))  # Приводим к int, если нужно
+EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS') == 'True'
 
-# Gmail SMTP server
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
 
-# Your Gmail credentials
-EMAIL_HOST_USER = 'aziretdzumabekov19@gmail.com'  # or use environment variable
-EMAIL_HOST_PASSWORD = 'gsom anii vqsb ntnw'   # this should be a Gmail App Password
-
-# Optional custom email sender name
-DEFAULT_FROM_EMAIL = 'SweetHome <aziretdzumabekov19@gmail.com>'
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL')
