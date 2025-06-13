@@ -149,8 +149,10 @@ USE_I18N = True
 
 
 CORS_ALLOWED_ORIGINS = [
-    "https://smart-home-front.vercel.app",  # Vite dev server
+    "http://localhost:5173",
+    "https://smart-home-front.vercel.app",
 ]
+
 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(days=7),  # токен будет жить 7 дней

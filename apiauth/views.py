@@ -40,7 +40,7 @@ def generate_confirmation_code():
 def send_confirmation_email(user, confirmation_code):
     subject = 'Подтверждение регистрации'
     message = f'Здравствуйте, {user.username}! Подтвердите вашу почту с помощью следующего кода: {confirmation_code}'
-    from_email = 'ExchangeWork <aziretdzumabekov19@gmail.com>'
+    from_email = 'SmartHome <aziretdzumabekov19@gmail.com>'
     recipient_list = [user.email]
 
     html_message = f'''
@@ -99,13 +99,13 @@ def send_confirmation_email(user, confirmation_code):
                 </div>
                 <div class="content">
                     <p>Здравствуйте, <strong>{user.username}</strong>!</p>
-                    <p>Спасибо за регистрацию на ExchangeWork.</p>
+                    <p>Спасибо за регистрацию на SmartHome.</p>
                     <p>Пожалуйста, используйте следующий код для подтверждения вашей почты:</p>
                     <div class="code">{confirmation_code}</div>
                     <p>Если вы не регистрировались, просто проигнорируйте это письмо.</p>
                 </div>
                 <div class="footer">
-                    <p>&copy; 2025 ExchangeWork. Все права защищены.</p>
+                    <p>&copy; 2025 SmartHome. Все права защищены.</p>
                 </div>
             </div>
         </body>
