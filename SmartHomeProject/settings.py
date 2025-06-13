@@ -24,7 +24,7 @@ SECRET_KEY = 'django-insecure-0)4ssvh(o(rt$2huxk-j$u5o&&d#8bmqwm2(mkb(o*@(*=pm-v
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['smarthome-33ao.onrender.com', 'localhost', '127.0.0.1']
 
 
 # Application definition
@@ -149,7 +149,7 @@ USE_I18N = True
 
 
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",  # Vite dev server
+    "https://smart-home-front.vercel.app",  # Vite dev server
 ]
 
 SIMPLE_JWT = {
