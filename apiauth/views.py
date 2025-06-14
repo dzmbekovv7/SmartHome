@@ -241,68 +241,83 @@ class AdminStatsAPIView(APIView):
 class AllGraphsAPIView(APIView):
     def get_base64_img(self, fig):
         buf = BytesIO()
-        fig.savefig(buf, format='png')
-        plt.close(fig)
+        fig.savefig(buf, format='png', bbox_inches='tight')
+        plt.close(fig)  # очень важно для освобождения памяти
         buf.seek(0)
         return base64.b64encode(buf.getvalue()).decode()
 
     def get(self, request):
-        houses = House.objects.all()
+        try:
+            # Только нужные поля
+            houses_data = list(House.objects.values('square', 'price', 'rooms', 'has_pool', 'location'))
 
-        # 1) Scatter plot: Square vs Price
-        fig1 = plt.figure(figsize=(10, 6))
-        sns.scatterplot(x=[h.square for h in houses], y=[h.price for h in houses], alpha=0.6)
-        plt.title("Площадь дома vs Цена")
-        plt.xlabel("Площадь (м²)")
-        plt.ylabel("Цена")
-        plt.grid(True)
+            # ----------- График 1: Площадь vs Цена -----------
+            square_price = [(h['square'], h['price']) for h in houses_data if h['square'] and h['price']]
+            x = [s for s, _ in square_price]
+            y = [p for _, p in square_price]
+            fig1 = plt.figure(figsize=(8, 5))
+            sns.scatterplot(x=x, y=y, alpha=0.6)
+            plt.title("Площадь дома vs Цена")
+            plt.xlabel("Площадь (м²)")
+            plt.ylabel("Цена")
+            plt.grid(True)
+            img1 = self.get_base64_img(fig1)
 
-        img1 = self.get_base64_img(fig1)
+            # ----------- График 2: Гистограмма комнат -----------
+            rooms = [h['rooms'] for h in houses_data if h['rooms'] is not None]
+            fig2 = plt.figure(figsize=(6, 4))
+            sns.histplot(rooms, bins=range(min(rooms), max(rooms)+2), discrete=True)
+            plt.title("Распределение количества комнат")
+            plt.xlabel("Количество комнат")
+            plt.ylabel("Частота")
+            plt.grid(axis='y')
+            img2 = self.get_base64_img(fig2)
 
-        # 2) Histogram of rooms
-        rooms = [h.rooms for h in houses]
-        fig2 = plt.figure(figsize=(8,5))
-        sns.histplot(rooms, bins=range(min(rooms), max(rooms)+2), discrete=True)
-        plt.title("Распределение количества комнат")
-        plt.xlabel("Количество комнат")
-        plt.ylabel("Частота")
-        plt.grid(axis='y')
-        img2 = self.get_base64_img(fig2)
+            # ----------- График 3: Пирог с бассейнами -----------
+            total = len(houses_data)
+            with_pool = sum(1 for h in houses_data if h['has_pool'])
+            without_pool = total - with_pool
+            fig3 = plt.figure(figsize=(6, 6))
+            plt.pie(
+                [with_pool, without_pool],
+                labels=['С бассейном', 'Без бассейна'],
+                autopct='%1.1f%%',
+                startangle=140,
+                colors=['#66b3ff', '#ff9999']
+            )
+            plt.title("Дома с бассейном и без")
+            img3 = self.get_base64_img(fig3)
 
-        # 3) Pie chart of houses with pool
-        total = houses.count()
-        with_pool = houses.filter(has_pool=True).count()
-        without_pool = total - with_pool
+            # ----------- График 4: Топ 10 локаций -----------
+            # Делается отдельно, напрямую через ORM
+            top_locations = (
+                House.objects.values('location')
+                .annotate(count=Count('id'))
+                .order_by('-count')[:10]
+            )
+            locs = [l['location'] for l in top_locations]
+            counts = [l['count'] for l in top_locations]
+            fig4 = plt.figure(figsize=(10, 6))
+            sns.barplot(x=counts, y=locs, palette='viridis')
+            plt.title("Топ 10 локаций по количеству домов")
+            plt.xlabel("Количество домов")
+            plt.ylabel("Локация")
+            plt.tight_layout()
+            img4 = self.get_base64_img(fig4)
 
-        fig3 = plt.figure(figsize=(7,7))
-        plt.pie([with_pool, without_pool], labels=['С бассейном', 'Без бассейна'], autopct='%1.1f%%',
-                startangle=140, colors=['#66b3ff', '#ff9999'])
-        plt.title("Дома с бассейном и без")
-        plt.tight_layout()
-        img3 = self.get_base64_img(fig3)
+            return Response({
+                "charts": [
+                    {"title": "Площадь дома vs Цена", "image": img1},
+                    {"title": "Распределение количества комнат", "image": img2},
+                    {"title": "Дома с бассейном и без", "image": img3},
+                    {"title": "Топ 10 локаций по количеству домов", "image": img4},
+                ]
+            })
 
-        # 4) Bar chart by location
-        data = houses.values('location').annotate(count=Count('id')).order_by('-count')[:10]
-        locations = [d['location'] for d in data]
-        counts = [d['count'] for d in data]
-
-        fig4 = plt.figure(figsize=(12,6))
-        sns.barplot(x=counts, y=locations, palette='viridis')
-        plt.title("Топ 10 локаций по количеству домов")
-        plt.xlabel("Количество домов")
-        plt.ylabel("Локация")
-        plt.tight_layout()
-        img4 = self.get_base64_img(fig4)
-
-        return Response({
-            "charts": [
-                {"title": "Площадь дома vs Цена", "image": img1},
-                {"title": "Распределение количества комнат", "image": img2},
-                {"title": "Дома с бассейном и без", "image": img3},
-                {"title": "Топ 10 локаций по количеству домов", "image": img4},
-            ]
-        })
-
+        except MemoryError:
+            return Response({"error": "Недостаточно памяти для генерации графиков"}, status=500)
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
 
 class IsAdminOrAgent(BasePermission):
     def has_permission(self, request, view):

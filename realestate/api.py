@@ -7,6 +7,9 @@ from .models import PredictionHistory
 from .serializers import PredictionHistorySerializer
 import logging
 import io
+import matplotlib
+matplotlib.use("Agg")  # Используем backend без GUI
+
 import matplotlib.pyplot as plt
 import base64
 from django.shortcuts import render
@@ -20,7 +23,6 @@ from django.db.models import Avg, Count
 logger = logging.getLogger(__name__)
 
 
-
 def generate_price_trend_image(start_date, end_date):
     sales = Sale.objects.filter(date__range=(start_date, end_date))
     if not sales.exists():
@@ -30,19 +32,21 @@ def generate_price_trend_image(start_date, end_date):
     dates = [s['date'] for s in sales_by_date]
     avg_prices = [s['avg_price'] for s in sales_by_date]
 
-    plt.figure(figsize=(8, 4))
-    plt.plot(dates, avg_prices, marker='o')
-    plt.title('Средняя цена по дате')
-    plt.xlabel('Дата')
-    plt.ylabel('Средняя цена')
-    plt.xticks(rotation=45)
-    plt.tight_layout()
+    fig, ax = plt.subplots(figsize=(8, 4))
+    ax.plot(dates, avg_prices, marker='o')
+    ax.set_title('Средняя цена по дате')
+    ax.set_xlabel('Дата')
+    ax.set_ylabel('Средняя цена')
+    fig.autofmt_xdate()
+    fig.tight_layout()
 
     buf = io.BytesIO()
-    plt.savefig(buf, format='png')
-    plt.close()
+    fig.savefig(buf, format='png')
+    plt.close(fig)
     buf.seek(0)
-    return base64.b64encode(buf.read()).decode('utf-8')
+    img_base64 = base64.b64encode(buf.read()).decode('utf-8')
+    buf.close()
+    return img_base64
 
 
 def generate_sales_volume_image(start_date, end_date):
@@ -52,19 +56,21 @@ def generate_sales_volume_image(start_date, end_date):
     dates = [s['date'] for s in sales_by_date]
     volumes = [s['sales_volume'] for s in sales_by_date]
 
-    plt.figure(figsize=(8, 4))
-    plt.bar(dates, volumes, color='purple')
-    plt.title('Объем продаж по дате')
-    plt.xlabel('Дата')
-    plt.ylabel('Количество продаж')
-    plt.xticks(rotation=45)
-    plt.tight_layout()
+    fig, ax = plt.subplots(figsize=(8, 4))
+    ax.bar(dates, volumes, color='purple')
+    ax.set_title('Объем продаж по дате')
+    ax.set_xlabel('Дата')
+    ax.set_ylabel('Количество продаж')
+    fig.autofmt_xdate()
+    fig.tight_layout()
 
     buf = io.BytesIO()
-    plt.savefig(buf, format='png')
-    plt.close()
+    fig.savefig(buf, format='png')
+    plt.close(fig)
     buf.seek(0)
-    return base64.b64encode(buf.read()).decode('utf-8')
+    img_base64 = base64.b64encode(buf.read()).decode('utf-8')
+    buf.close()
+    return img_base64
 
 
 def generate_popularity_by_region_image(start_date, end_date):
@@ -74,18 +80,19 @@ def generate_popularity_by_region_image(start_date, end_date):
     regions = [p['region'] for p in popularity_by_region]
     counts = [p['sales_count'] for p in popularity_by_region]
 
-    plt.figure(figsize=(8, 4))
-    plt.barh(regions, counts, color='orange')
-    plt.title('Популярность районов')
-    plt.xlabel('Количество продаж')
-    plt.tight_layout()
+    fig, ax = plt.subplots(figsize=(8, 4))
+    ax.barh(regions, counts, color='orange')
+    ax.set_title('Популярность районов')
+    ax.set_xlabel('Количество продаж')
+    fig.tight_layout()
 
     buf = io.BytesIO()
-    plt.savefig(buf, format='png')
-    plt.close()
+    fig.savefig(buf, format='png')
+    plt.close(fig)
     buf.seek(0)
-    return base64.b64encode(buf.read()).decode('utf-8')
-
+    img_base64 = base64.b64encode(buf.read()).decode('utf-8')
+    buf.close()
+    return img_base64
 
 def market_trends_api(request):
     end_date_str = request.GET.get('end_date')
