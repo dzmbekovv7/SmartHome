@@ -49,7 +49,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    'corsheaders.middleware.CorsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',  # ОБЯЗАТЕЛЬНО первым
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -58,6 +58,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
 from datetime import timedelta
 
 ROOT_URLCONF = 'SmartHomeProject.urls'
@@ -183,7 +184,6 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 TEMPLATES[0]['DIRS'] = [os.path.join(BASE_DIR, 'realestate/templates')]
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
-CORS_ALLOW_ALL_ORIGINS = True  # временно, для разработки
 ASGI_APPLICATION = 'SmartHomeProject.asgi.application'  # Replace with your actual project name
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
