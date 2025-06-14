@@ -14,7 +14,7 @@ class EmailVerification(models.Model):
 class House(models.Model):
     name = models.CharField(max_length=100)
     description = models.TextField()
-    image = models.ImageField(upload_to='houses/', blank=True, null=True)
+    image = models.URLField(blank=True, null=True)
     price = models.FloatField()
     location = models.CharField(max_length=100)
     # Уберём location как просто строку и добавим координаты
