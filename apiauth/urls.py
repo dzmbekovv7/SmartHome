@@ -13,7 +13,6 @@ urlpatterns = [
     path('profile/update/', views.UpdateProfileView.as_view(), name='update-profile'),
     path('users/', views.UserListView.as_view(), name='user-list'),
     path('users/block/<int:user_id>/', views.BlockUserView.as_view(), name='block-user'),
-    path('graphs/all/', views.AllGraphsAPIView.as_view(), name='all-graphs'),
     path('consultation/', views.consultation_request, name='consultation_request'),
 path("admin-stats/", views.AdminStatsAPIView.as_view(), name="admin-stats"),
 

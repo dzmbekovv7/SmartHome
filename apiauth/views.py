@@ -35,6 +35,7 @@ from rest_framework.response import Response
 from django.db.models import Count
 import io
 from houses.models import Comment
+
 def generate_confirmation_code():
     return ''.join(random.choices('0123456789', k=6))
 def send_confirmation_email(user, confirmation_code):
